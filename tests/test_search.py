@@ -3,7 +3,16 @@
 import pytest
 
 from src.domain import Customer
-from src.search_logic import normalize_text, search_customers
+from src.search_logic import (
+    ERROR_INVALID_CHARS,
+    ERROR_MIN_LENGTH,
+    MSG_NO_RESULTS,
+    SearchResult,
+    SearchValidationError,
+    normalize_text,
+    search_customers,
+    validate_query,
+)
 
 
 @pytest.fixture
@@ -100,3 +109,51 @@ def test_search_using_default_storage():
     assert len(results) >= 2
     assert results[0].name == "Maria Gomez"
     assert results[1].name == "María López"
+
+
+@pytest.mark.parametrize("invalid_query", ["", " ", "   ", "a", " a ", "1"])
+def test_search_rejects_empty_or_single_char_ts_03(invalid_query):
+    """TS-03 / AC-03: Validates rejection of empty queries or queries with < 2 characters."""
+    with pytest.raises(SearchValidationError) as exc_info:
+        search_customers(invalid_query)
+    assert str(exc_info.value) == ERROR_MIN_LENGTH
+
+    with pytest.raises(SearchValidationError) as exc_info:
+        validate_query(invalid_query)
+    assert str(exc_info.value) == ERROR_MIN_LENGTH
+
+
+@pytest.mark.parametrize(
+    "forbidden_query",
+    [
+        "maria; DROP TABLE",
+        "user$test",
+        "test<script>",
+        "name|other",
+        "user&admin",
+        "path/file",
+    ],
+)
+def test_search_rejects_invalid_characters(forbidden_query):
+    """SPEC rule: query cannot contain command injection or disallowed special characters."""
+    with pytest.raises(SearchValidationError) as exc_info:
+        search_customers(forbidden_query)
+    assert str(exc_info.value) == ERROR_INVALID_CHARS
+
+
+def test_search_no_results_ts_04_ac_04(sample_customers):
+    """TS-04 / AC-04: Non-existent term returns empty list and informative message."""
+    results = search_customers("XYZ999", sample_customers)
+    assert isinstance(results, SearchResult)
+    assert len(results) == 0
+    assert results == []
+    assert results.message == MSG_NO_RESULTS
+    assert str(results) == MSG_NO_RESULTS
+
+
+def test_search_valid_characters_accepted(sample_customers):
+    """Allowed characters: letters (with accents), numbers, @, spaces, and dots."""
+    # Searching with valid symbols '@', '.', and spaces
+    results = search_customers("gomez@gmail.com", sample_customers)
+    assert len(results) == 1
+    assert results[0].name == "Maria Gomez"
