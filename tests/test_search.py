@@ -1,8 +1,10 @@
-"""Tests for the customer search logic engine."""
-
+import subprocess
+import sys
+import time
 import pytest
 
 from src.domain import Customer
+from src.main import run_cli
 from src.search_logic import (
     ERROR_INVALID_CHARS,
     ERROR_MIN_LENGTH,
@@ -13,6 +15,7 @@ from src.search_logic import (
     search_customers,
     validate_query,
 )
+
 
 
 @pytest.fixture
@@ -157,3 +160,103 @@ def test_search_valid_characters_accepted(sample_customers):
     results = search_customers("gomez@gmail.com", sample_customers)
     assert len(results) == 1
     assert results[0].name == "Maria Gomez"
+
+
+def test_cli_search_by_name_ac_01(capsys):
+    """AC-01 / CLI: Searching 'maria' returns 'Maria Gomez' and 'María López' ordered alphabetically."""
+    exit_code = run_cli(["--name", "maria"])
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert "Maria Gomez" in captured.out
+    assert "María López" in captured.out
+    assert captured.out.index("Maria Gomez") < captured.out.index("María López")
+
+
+def test_cli_search_by_email_ac_02(capsys):
+    """AC-02 / CLI: Searching '@gmail' returns all customers with that email domain."""
+    exit_code = run_cli(["--email", "gmail"])
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert "ana.garcia@gmail.com" in captured.out
+    assert "jose.perez@gmail.com" in captured.out
+    assert "maria.gomez@gmail.com" in captured.out
+
+
+def test_cli_search_positional_query(capsys):
+    """CLI: Searching using positional argument."""
+    exit_code = run_cli(["maria"])
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert "Maria Gomez" in captured.out
+    assert "María López" in captured.out
+
+
+def test_cli_rejects_empty_or_short_query_ac_03(capsys):
+    """AC-03 / CLI: Single char or whitespace is rejected with length error."""
+    # Single char query
+    exit_code_single = run_cli(["a"])
+    assert exit_code_single == 1
+    captured_single = capsys.readouterr()
+    assert ERROR_MIN_LENGTH in captured_single.err
+
+    # Whitespace query
+    exit_code_blank = run_cli(["--name", "   "])
+    assert exit_code_blank == 1
+    captured_blank = capsys.readouterr()
+    assert ERROR_MIN_LENGTH in captured_blank.err
+
+    # No arguments query
+    exit_code_none = run_cli([])
+    assert exit_code_none == 1
+    captured_none = capsys.readouterr()
+    assert ERROR_MIN_LENGTH in captured_none.err
+
+
+def test_cli_no_results_ac_04(capsys):
+    """AC-04 / CLI: Non-existent term prints informative message."""
+    exit_code = run_cli(["XYZ999"])
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert MSG_NO_RESULTS in captured.out
+
+
+def test_cli_rejects_invalid_characters(capsys):
+    """CLI: Disallowed characters trigger validation error."""
+    exit_code = run_cli(["maria; DROP TABLE"])
+    assert exit_code == 1
+    captured = capsys.readouterr()
+    assert ERROR_INVALID_CHARS in captured.err
+
+
+def test_search_execution_latency_ac_05():
+    """AC-05: JSON reading and searching executes in under 500ms."""
+    start_time = time.perf_counter()
+    results = search_customers("maria")
+    elapsed = time.perf_counter() - start_time
+
+    assert len(results) >= 2
+    assert elapsed < 0.500, f"Search took {elapsed:.4f}s, exceeding 500ms limit"
+
+
+def test_cli_subprocess_execution_and_speed_ac_05():
+    """AC-05 / Verification: End-to-end execution of 'python src/main.py --name ma' under 500ms."""
+    import os
+
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+    start_time = time.perf_counter()
+    proc = subprocess.run(
+        [sys.executable, "src/main.py", "--name", "ma"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+    )
+    elapsed = time.perf_counter() - start_time
+
+    assert proc.returncode == 0
+    assert "Maria Gomez" in proc.stdout
+    assert "María López" in proc.stdout
+    assert elapsed < 0.500, f"Process took {elapsed:.4f}s, exceeding 500ms limit"
+
+

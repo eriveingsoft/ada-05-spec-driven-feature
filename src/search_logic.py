@@ -75,6 +75,7 @@ def normalize_text(text: str) -> str:
 def search_customers(
     query: str,
     customers: Optional[list[Customer]] = None,
+    field: Optional[str] = None,
 ) -> SearchResult:
     """Validates query and filters customers by name or email matching the query.
 
@@ -84,6 +85,7 @@ def search_customers(
     Args:
         query: The search term.
         customers: Optional list of Customer objects. If omitted, loads from storage.
+        field: Optional specific field to filter by ('name' or 'email').
 
     Returns:
         SearchResult containing matching Customer objects ordered alphabetically
@@ -104,8 +106,16 @@ def search_customers(
         norm_name = normalize_text(customer.name)
         norm_email = normalize_text(customer.email)
 
-        if normalized_query in norm_name or normalized_query in norm_email:
-            matches.append(customer)
+        if field == "name":
+            if normalized_query in norm_name:
+                matches.append(customer)
+        elif field == "email":
+            if normalized_query in norm_email:
+                matches.append(customer)
+        else:
+            if normalized_query in norm_name or normalized_query in norm_email:
+                matches.append(customer)
+
 
     # Sort results alphabetically by customer name (accent and case-insensitive)
     matches.sort(key=lambda c: normalize_text(c.name))
