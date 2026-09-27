@@ -9,3 +9,7 @@
 | NFR-01 | N/A | T-01 | `test_setup.py` | `test_customers_json_exists_and_is_valid` | Done | Entorno base configurado correctamente para las pruebas (Python 3.11+). |
 | NFR-02 | N/A | T-01 | `customers.json` | `test_customers_json_exists_and_is_valid` | Done | Archivo local JSON creado con los datos de prueba semilla. |
 | NFR-03 | AC-05 | T-05 | `test_search.py` | `test_search_execution_latency_ac_05` | Done | Latencia verificada desde la CLI; ejecución completa en < 500 ms. |
+| FR-06 | AC-06 / TS-06 | T-07 | `src/domain.py` | `test_customer_from_dict_rejects_none_fields_ac_06` | Done | Rechazo de valores None explícitos en campos obligatorios con ValueError. |
+| FR-06 | AC-07 / TS-07 | T-07 | `src/domain.py` | `test_customer_from_dict_rejects_empty_or_whitespace_strings_ac_07` | Done | Rechazo de cadenas vacías o solo espacios en name o email con ValueError. |
+| FR-06 | AC-08 | T-07 | `tests/test_domain.py` | `tests/test_domain.py` | Done | Cobertura de pruebas unitarias para validaciones de nulos y vacíos. |
+| NFR-03 | AC-09 | T-07 | `tests/` | Suite completa (48 tests) | Done | Suite de 37 pruebas original pasa sin regresiones más 11 nuevos casos. |

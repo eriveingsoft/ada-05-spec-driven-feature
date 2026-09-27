@@ -35,3 +35,9 @@
 - **Files:** `README.md`.
 - **Acceptance:** El README documenta cómo instalar dependencias, cómo ejecutar una búsqueda y cómo correr las pruebas automatizadas.
 - **Verification:** Leer el README y replicar los comandos copiándolos y pegándolos en la terminal para asegurar que funcionan sin errores.
+
+## T-07 Strict validation in Customer.from_dict
+- **Goal:** Prevenir casteo a "None" y añadir validación estricta en `Customer.from_dict` para rechazar valores nulos y cadenas vacías/blancas en campos obligatorios.
+- **Files:** `src/domain.py`, `tests/test_domain.py`, `SPEC.md`.
+- **Acceptance:** `Customer.from_dict` lanza `ValueError` descriptivo ante valores `None` en campos obligatorios y ante cadenas vacías o solo espacios en `name` o `email` (AC-06 y AC-07). Pruebas pasan sin regresiones (AC-08, AC-09).
+- **Verification:** Ejecutar `pytest -v` confirmando que los 37 tests existentes y los nuevos pasan.
