@@ -32,6 +32,8 @@ Creación de bases de datos, interfaces gráficas (GUI), APIs web o autenticaci�
 ## Validation Rules
 - La cadena de búsqueda, después de limpiarle los espacios (trim), debe tener una longitud >= 2 caracteres.
 - La búsqueda no puede contener caracteres de inyección de comandos o símbolos especiales extraños (solo letras, números, @, espacios y puntos).
+- Los campos obligatorios (`id`, `name`, `email`) en la creación de un `Customer` no pueden ser nulos (`None`). Se rechaza cualquier valor `None` explícito con un `ValueError` descriptivo.
+- Los campos `name` y `email` en la creación de un `Customer` no pueden ser cadenas vacías ni contener únicamente espacios en blanco tras aplicar `.strip()`, lanzando un `ValueError`.
 
 ## Error Handling
 - Si la búsqueda tiene menos de 2 caracteres: Imprimir el mensaje de error `Error: El término de búsqueda debe tener al menos 2 caracteres válidos.`
@@ -43,6 +45,10 @@ Creación de bases de datos, interfaces gráficas (GUI), APIs web o autenticaci�
 - AC-03: (Cubre FR-04) Buscar "a" o un espacio vacío (" ") es rechazado con el error de longitud.
 - AC-04: (Cubre FR-06) Buscar un término inexistente (ej. "XYZ999") devuelve el mensaje "No se encontraron clientes para el término de búsqueda."
 - AC-05: (Cubre NFR-03) El sistema ejecuta la lectura del JSON y devuelve los resultados en la terminal en menos de 500 milisegundos.
+- AC-06: Se rechazan diccionarios con valores None explícitos en campos obligatorios (`id`, `name`, `email`) lanzando `ValueError`.
+- AC-07: Se rechazan diccionarios con cadenas vacías (`""` o `"   "`) en `name` o `email` lanzando `ValueError`.
+- AC-08: Nuevos test unitarios en `test_domain.py` cubren las aserciones de nulos y vacíos.
+- AC-09: La suite de pruebas actual (37 tests) pasa correctamente sin regresiones.
 
 ## Test Scenarios
 - **TS-01:** Búsqueda exacta por nombre (case y acentos ignorados).
@@ -50,6 +56,8 @@ Creación de bases de datos, interfaces gráficas (GUI), APIs web o autenticaci�
 - **TS-03:** Validar rechazo de búsqueda vacía o de 1 carácter.
 - **TS-04:** Validar respuesta vacía (sin resultados) con término inexistente.
 - **TS-05:** Validar correcto ordenamiento alfabético de los resultados devueltos.
+- **TS-06:** Validar rechazo de valores `None` explícitos en campos obligatorios de `Customer` (AC-06).
+- **TS-07:** Validar rechazo de cadenas vacías o solo espacios en blanco en `name` o `email` de `Customer` (AC-07).
 
 ## Constraints
 - N/A. (Las restricciones ya están definidas en REQUIREMENTS.md, sección C-01).
